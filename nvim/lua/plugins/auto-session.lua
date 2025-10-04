@@ -8,13 +8,41 @@ return {
       auto_session_suppress_dirs = { "~/", "~/Dev/", "~/Downloads", "~/Documents", "~/Desktop/" },
     })
 
-    local keymap = vim.keymap
+    -- Add :SessionSave and :SessionRestore commands (optional)
+    vim.api.nvim_create_user_command("SessionSave", function()
+      auto_session.SaveSession()
+    end, {})
 
-    keymap.set("n", "<leader>wr", "<cmd>SessionRestore<CR>", { desc = "Restore session for cwd" }) -- restore last workspace session for current directory
-    keymap.set("n", "<leader>ws", "<cmd>SessionSave<CR>", { desc = "Save session for auto session root dir" }) -- save workspace session for current working directory
-    keymap.set("n", "<leader>wl", require("auto-session.session-lens").search_session, {
-      noremap = true,
-      desc    = "List all saved sessions"
-    })
+    vim.api.nvim_create_user_command("SessionRestore", function()
+      auto_session.RestoreSession()
+    end, {})
+
+    -- Keymaps
+    local keymap = vim.keymap
+    keymap.set("n", "<leader>ws", function()
+      auto_session.SaveSession()
+    end, { desc = "Save session" })
+
+    keymap.set("n", "<leader>wr", function()
+      auto_session.RestoreSession()
+    end, { desc = "Restore session" })
+
+    -- session-lens (optional)
+    local ok, session_lens = pcall(require, "auto-session.session-lens")
+    if ok then
+      keymap.set("n", "<leader>wl", session_lens.search_session, {
+        noremap = true,
+        desc = "List all saved sessions"
+      })
+    end
   end,
+  dependencies = {
+    {
+      "rmagatti/session-lens",
+      dependencies = { "nvim-telescope/telescope.nvim" },
+      config = function()
+        require("session-lens").setup({})
+      end,
+    }
+  }
 }
